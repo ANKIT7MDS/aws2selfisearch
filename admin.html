@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Selfie Search — Admin</title>
+<style>
+:root{--bg:#0b1220;--fg:#e9eef7;--muted:#9bb0d3;--card:#131b2e;--accent:#5b9dff;--danger:#ef5a5a;--border:#223154}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+.container{max-width:780px;margin:auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+label{display:block;margin:10px 0}
+input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#0f1627;color:var(--fg)}
+button{padding:10px 14px;border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;margin-right:8px}
+button.danger{background:var(--danger)}
+.link{color:var(--muted);text-decoration:none}.link:hover{text-decoration:underline}
+.note{color:var(--muted);margin-top:12px}
+.status{margin-top:12px;padding:10px;border-radius:10px;background:#0f1627;border:1px solid var(--border);color:var(--muted)}
+.status.success{border-color:#1db954;color:#c7ffdc}
+</style>
+</head>
+<body>
+<header class="container">
+  <h1>Admin</h1>
+  <nav><a href="index.html" class="link">&larr; Back</a></nav>
+</header>
+
+<main class="container card">
+  <form id="cfgForm">
+    <label>API Base (without route)
+      <input id="apiBase" placeholder="https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com" required />
+    </label>
+    <label>Route (e.g., /search)
+      <input id="route" placeholder="/search" required />
+    </label>
+    <label>API Key (optional)
+      <input id="apiKey" placeholder="leave blank if not required" />
+    </label>
+    <div style="margin-top:8px">
+      <button class="">Save</button>
+      <button type="button" id="clearCfg" class="danger">Clear</button>
+      <button type="button" id="testCfg">Test</button>
+    </div>
+  </form>
+  <p class="note">
+    Config ब्राउज़र के <code>localStorage</code> में सेव होता है.
+    Backend CORS में <code>Content-Type</code> और (यदि required हो) <code>x-api-key</code> allow रखें.
+  </p>
+  <div id="status" class="status"></div>
+</main>
+
+<script>
+const LS_KEY='selfiesearch_cfg';
+const $=id=>document.getElementById(id);
+function load(){try{const c=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); $('apiBase').value=c.apiBase||''; $('route').value=c.route||'/search'; $('apiKey').value=c.apiKey||'';}catch{}}
+function save(e){e.preventDefault(); const cfg={apiBase:$('apiBase').value.trim(),route:$('route').value.trim(),apiKey:$('apiKey').value.trim()}; localStorage.setItem(LS_KEY,JSON.stringify(cfg)); $('status').textContent='Saved ✅'; $('status').className='status success';}
+$('cfgForm').addEventListener('submit',save);
+$('clearCfg').onclick=()=>{localStorage.removeItem(LS_KEY); load(); $('status').textContent='Cleared'; $('status').className='status';};
+$('testCfg').onclick=()=>{try{const c=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); if(!c.apiBase||!c.route) throw new Error('Set API Base & Route'); const url=c.apiBase.replace(/\/$/,'')+c.route; $('status').textContent='OK: '+url; $('status').className='status success';}catch(e){$('status').textContent=e.message; $('status').className='status';}};
+load();
+</script>
+</body>
+</html>
