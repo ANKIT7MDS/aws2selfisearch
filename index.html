@@ -1,111 +1,237 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="hi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Selfie Search</title>
-<style>
-:root{--bg:#0b1220;--fg:#e9eef7;--muted:#9bb0d3;--card:#131b2e;--accent:#5b9dff;--danger:#ef5a5a;--ok:#1db954;--border:#223154}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
-.container{max-width:980px;margin:auto;padding:16px}
-header,.footer{display:flex;justify-content:space-between;align-items:center}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:10px 0 18px}
-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#0f1627;color:var(--fg)}
-button{padding:10px 14px;border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer}
-button.ghost{background:transparent;border:1px solid var(--border);color:var(--fg)}
-.link{color:var(--muted);text-decoration:none}.link:hover{text-decoration:underline}
-.status{margin-top:12px;padding:10px;border-radius:10px;background:#0f1627;border:1px solid var(--border);color:var(--muted)}
-.status.success{border-color:var(--ok);color:#c7ffdc}
-.status.error{border-color:var(--danger);color:#ffd0d0}
-.results{margin-top:16px}.hidden{display:none}
-table{width:100%;border-collapse:collapse;background:#0f1627;border:1px solid var(--border);border-radius:10px;overflow:hidden}
-th,td{padding:10px;border-bottom:1px solid var(--border);font-size:14px}
-thead th{background:#0b1324;text-align:left}
-small.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;color:var(--muted)}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Selfie Search</title>
+  <style>
+    :root { --bg:#0b1220; --panel:#121a2a; --text:#e9edf1; --muted:#9fb0c3; --accent:#5a8bff; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,Segoe UI,Roboto}
+    header{padding:20px 16px;text-align:center;font-size:28px;font-weight:700}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}
+    .card{background:var(--panel);border:1px solid #1e2a43;border-radius:14px;padding:16px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input,select,button{border-radius:10px;border:1px solid #294063;background:#0f1728;color:var(--text);padding:10px 12px}
+    button{background:var(--accent);border:none;color:white;font-weight:600;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .row{display:grid;gap:12px}
+    @media(min-width:840px){ .grid{display:grid;grid-template-columns:420px 1fr;gap:16px} }
+    video,canvas{width:100%;border-radius:12px;background:#000}
+    .hint{color:var(--muted);font-size:13px}
+    .bar{height:8px;background:#0d1423;border-radius:20px;overflow:hidden;margin-top:6px}
+    .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6ae,#59f);transition:width .25s}
+    .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    .tile{background:#0f1728;border:1px solid #203252;border-radius:12px;overflow:hidden}
+    .tile img{width:100%;display:block}
+    .tile .meta{padding:8px 10px;font-size:12px;color:var(--muted)}
+    .cfg{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}
+    .cfg input, .cfg select{width:100%}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#1a2540;color:#a9c1ff;font-size:12px;margin-right:6px}
+    .row-inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    footer{padding:24px;text-align:center;color:var(--muted);font-size:12px}
+  </style>
 </head>
 <body>
-<header class="container">
-  <h1>Selfie Search</h1>
-  <nav>
-    <a href="admin.html" class="link">Admin</a>
-    <button id="btnTestConfig" class="ghost">Test Config</button>
-  </nav>
-</header>
+<header>Selfie Search</header>
 
-<main class="container card">
-  <form id="searchForm">
-    <div class="grid">
-      <label>S3 Key (photo file name)
-        <input name="key" required placeholder="selfie.jpg" />
-      </label>
-      <label>Threshold
-        <input type="number" name="threshold" min="1" max="100" value="85" />
-      </label>
-      <label>Max Faces
-        <input type="number" name="maxFaces" min="1" max="50" value="5" />
-      </label>
+<div class="wrap grid">
+  <!-- Left: Camera & Controls -->
+  <section class="card">
+    <div class="row">
+      <div class="cfg">
+        <div>
+          <label>API Base</label>
+          <input id="apiBase" placeholder="https://YOUR.execute-api.ap-southeast-1.amazonaws.com" />
+        </div>
+        <div>
+          <label>API Key (optional)</label>
+          <input id="apiKey" placeholder="x-api-key" />
+        </div>
+      </div>
+
+      <div class="cfg">
+        <div>
+          <label>Threshold</label>
+          <input id="threshold" type="number" min="0" max="100" value="85" />
+        </div>
+        <div>
+          <label>Max Faces</label>
+          <input id="maxFaces" type="number" min="1" max="50" value="5" />
+        </div>
+      </div>
+
+      <div class="cfg">
+        <div>
+          <label>Limit search to folder (prefix, optional)</label>
+          <input id="prefix" placeholder="e.g. common2/" />
+        </div>
+        <div class="row-inline">
+          <div>
+            <label>&nbsp;</label>
+            <button id="saveCfg">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label>Camera</label>
+        <video id="video" autoplay playsinline muted></video>
+        <div class="row-inline">
+          <button id="openCam">Open Camera</button>
+          <button id="snap" disabled>Capture</button>
+        </div>
+        <div class="hint">कैमरा खोलें → कैप्चर → सिस्टम ऑटो-अपलोड करेगा और मैच ढूँढेगा।</div>
+      </div>
+
+      <div>
+        <label>Progress</label>
+        <div class="bar"><i id="pbar"></i></div>
+      </div>
     </div>
-    <button type="submit">Search</button>
-  </form>
-
-  <section id="status" class="status"></section>
-
-  <section id="results" class="results hidden">
-    <h2>Results</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th><th>Score</th><th>FaceId</th><th>Photo</th><th>Bucket</th><th>Meta</th>
-        </tr>
-      </thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
-    <p><small class="mono">Tip: CORS में <code>Content-Type</code> और (optional) <code>x-api-key</code> allow करें.</small></p>
   </section>
-</main>
 
-<footer class="container footer"><small>© Your Org</small></footer>
+  <!-- Right: Results -->
+  <section class="card">
+    <div class="row">
+      <div class="row-inline">
+        <span class="pill" id="stat">Idle</span>
+        <span class="pill" id="took"></span>
+      </div>
+      <div class="results" id="results"></div>
+      <pre id="raw" class="hint" style="white-space:pre-wrap;"></pre>
+    </div>
+  </section>
+</div>
+
+<footer>© Your Org • camera → upload-url → S3 → /search</footer>
 
 <script>
-const LS_KEY='selfiesearch_cfg';
-const $=s=>document.querySelector(s);
-const statusEl=$("#status"), resultsEl=$("#results"), tbodyEl=$("#resultsBody");
+const $ = id => document.getElementById(id);
+const cfg = {
+  apiBase: localStorage.getItem("apiBase") || "",
+  apiKey:  localStorage.getItem("apiKey")  || "",
+  threshold: +(localStorage.getItem("threshold") || 85),
+  maxFaces: +(localStorage.getItem("maxFaces") || 5),
+  prefix: localStorage.getItem("prefix") || ""
+};
+$("apiBase").value = cfg.apiBase;
+$("apiKey").value  = cfg.apiKey;
+$("threshold").value = cfg.threshold;
+$("maxFaces").value  = cfg.maxFaces;
+$("prefix").value    = cfg.prefix;
 
-const readCfg=()=>{try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}')}catch{return{}}};
-const cfgUrl=()=>{const{apiBase,route}=readCfg(); if(!apiBase||!route) throw new Error('Admin में API Base और Route सेट करें.'); return apiBase.replace(/\/$/,'')+route;};
-const cfgHeaders=()=>{const h={'Content-Type':'application/json'}; const{apiKey}=readCfg(); if(apiKey)h['x-api-key']=apiKey; return h;};
-const show=(msg,kind='info')=>{statusEl.className='status '+kind; statusEl.textContent=msg;};
-const render=(rows)=>{tbodyEl.innerHTML=''; rows.forEach((r,i)=>{const tr=document.createElement('tr'); tr.innerHTML=`
-<td>${i+1}</td>
-<td>${(r.score??0).toFixed(3)}</td>
-<td><code>${r.faceId||''}</code></td>
-<td>${r.Photo||r.photo||''}</td>
-<td>${r.Bucket||r.bucket||''}</td>
-<td><code>${JSON.stringify(r.meta||{})}</code></td>`; tbodyEl.appendChild(tr)}); resultsEl.classList.toggle('hidden',!rows.length);};
+$("saveCfg").onclick = () => {
+  cfg.apiBase = $("apiBase").value.trim();
+  cfg.apiKey  = $("apiKey").value.trim();
+  cfg.threshold = +$("threshold").value;
+  cfg.maxFaces = +$("maxFaces").value;
+  cfg.prefix   = $("prefix").value.trim();
+  for (const k in cfg) localStorage.setItem(k, cfg[k]);
+  msg("Saved settings");
+};
 
-async function doSearch(payload){
-  const res=await fetch(cfgUrl(),{method:'POST',headers:cfgHeaders(),body:JSON.stringify(payload)});
-  const txt=await res.text(); if(!res.ok) throw new Error(`${res.status} ${res.statusText} — ${txt}`);
-  try{return JSON.parse(txt)}catch{return txt}
+let stream;
+$("openCam").onclick = async () => {
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}});
+    $("video").srcObject = stream;
+    $("snap").disabled = false;
+    msg("Camera ready");
+  }catch(e){ alert("Camera error: "+e.message); }
+};
+
+$("snap").onclick = async () => {
+  try{
+    guard();
+    const t0 = performance.now();
+    // 1) Take snapshot -> blob (jpeg)
+    const blob = await takeSnapshot($("video"));
+    progress(20);
+
+    // 2) Ask backend for presigned PUT url (temp key)
+    const key = `temp/selfie-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    const body = { key, contentType: "image/jpeg", event: "selfie" };
+    const upRes = await apiPOST("/upload-url", body);
+    const uploadUrl = upRes.uploadUrl;
+    if(!uploadUrl) throw new Error("uploadUrl not returned");
+    progress(45);
+
+    // 3) PUT to S3
+    await fetch(uploadUrl, { method:"PUT", headers:{ "Content-Type":"image/jpeg" }, body: blob });
+    progress(70);
+
+    // 4) Search
+    let url = "/search";
+    if (cfg.prefix) {
+      const q = new URLSearchParams({ prefix: cfg.prefix });
+      url += `?${q.toString()}`;
+    }
+    const searchRes = await apiPOST(url, {
+      key, threshold: cfg.threshold, maxFaces: cfg.maxFaces
+    });
+    progress(100);
+
+    // 5) Render
+    renderResults(searchRes);
+    $("took").textContent = `took ${(performance.now()-t0|0)} ms`;
+    msg("Done");
+  }catch(e){
+    msg("Error: "+e.message);
+    console.error(e);
+  }finally{
+    unguard();
+    setTimeout(()=>progress(0), 700);
+  }
+};
+
+function takeSnapshot(video){
+  const c = document.createElement("canvas");
+  const w = video.videoWidth || 960, h = video.videoHeight || 720;
+  c.width = w; c.height = h;
+  c.getContext("2d").drawImage(video, 0, 0, w, h);
+  return new Promise(r=>c.toBlob(r, "image/jpeg", 0.92));
 }
 
-$("#searchForm").addEventListener('submit',async e=>{
-  e.preventDefault();
-  const fd=new FormData(e.target);
-  const payload={key:fd.get('key'),threshold:Number(fd.get('threshold')||85),maxFaces:Number(fd.get('maxFaces')||5)};
-  show('Searching…');
-  try{
-    const out=await doSearch(payload);
-    let rows=[]; if(Array.isArray(out)) rows=out;
-    else if(out&&typeof out.body==='string') rows=JSON.parse(out.body);
-    else if(out&&typeof out==='object') rows=out.results||out;
-    render(rows); show('Done ✅','success');
-  }catch(err){show(err.message||String(err),'error'); render([]);}
-});
+async function apiPOST(path, data){
+  const url = cfg.apiBase.replace(/\/$/,"")+path;
+  const headers = { "Content-Type":"application/json" };
+  if (cfg.apiKey) headers["x-api-key"] = cfg.apiKey;
+  const res = await fetch(url, { method:"POST", headers, body: JSON.stringify(data) });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
-$("#btnTestConfig").addEventListener('click',()=>{try{show(`OK: ${cfgUrl()}`,'success')}catch(e){show(e.message,'error')}});
+function renderResults(json){
+  const list = Array.isArray(json) ? json : (json.body || json.results || []);
+  $("raw").textContent = JSON.stringify(json, null, 2);
+  const root = $("results");
+  root.innerHTML = "";
+  if(!list || !list.length){ root.innerHTML = "<div class='hint'>No matches</div>"; return; }
+  for (const m of list){
+    const src = signedOrPublicUrl(m) || "";
+    const div = document.createElement("div");
+    div.className = "tile";
+    div.innerHTML = `
+      <img loading="lazy" src="${src}" alt="">
+      <div class="meta">
+        <div><b>${(m.score||m.Similarity||0).toFixed(2)}%</b> • ${m.Photo||m.key||""}</div>
+        <div>${m.meta?.Confidence ? "Conf "+(+m.meta.Confidence).toFixed(2) : ""}</div>
+      </div>`;
+    root.appendChild(div);
+  }
+}
+
+// If your backend returns Bucket/Photo, build an s3 website/public URL here if needed.
+// For now we just show file name. You can wire CloudFront URL if available.
+function signedOrPublicUrl(m){
+  // placeholder: return '' to avoid broken images if S3 is private
+  return "";
+}
+
+function msg(t){ $("stat").textContent = t; }
+function progress(p){ $("pbar").style.width = p+"%"; }
+function guard(){ $("snap").disabled = true; $("openCam").disabled = true; }
+function unguard(){ $("snap").disabled = false; $("openCam").disabled = false; }
 </script>
 </body>
 </html>
