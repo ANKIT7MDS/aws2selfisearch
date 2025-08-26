@@ -5,91 +5,101 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Selfie Search</title>
 <style>
-:root{--bg:#0b1220;--panel:#121a2a;--text:#e9edf1;--muted:#9fb0c3;--accent:#5a8bff;--ok:#19c37d;--bad:#ef4444;--border:#1e2a43}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Segoe UI,Roboto}
-header{padding:18px 16px;text-align:center;font-weight:700;font-size:26px}
+:root{
+  --bg:#0b0b0c;--panel:#141417;--soft:#1b1b20;--text:#f7f7f9;--muted:#c7c7ce;
+  --orange:#ff7a1a;--orange-2:#ff923f;--orange-3:#ffa95f;--border:#25252b;--ok:#17c964;--bad:#ff3b30;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto}
+header{padding:16px;text-align:center;font-weight:800;font-size:22px;background:linear-gradient(180deg,#141417,#111)}
 .wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}
 .grid{display:grid;gap:16px}
 @media(min-width:920px){.grid{grid-template-columns:420px 1fr}}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-input,button{border-radius:10px;border:1px solid var(--border);background:#0f1728;color:var(--text);padding:10px 12px}
-button{background:var(--accent);border:none;color:#fff;font-weight:600;cursor:pointer}
-button.ghost{background:transparent}
+input,button,select{border-radius:10px;border:1px solid var(--border);background:var(--soft);color:var(--text);padding:10px 12px}
+button{background:var(--orange);border:none;color:#111;font-weight:700;cursor:pointer}
+button.ghost{background:transparent;color:var(--text)}
 button:disabled{opacity:.6;cursor:not-allowed}
-.row{display:grid;gap:12px}
+.row{display:grid;gap:10px}
 .cfg{display:grid;gap:10px;grid-template-columns:1fr 1fr}
 @media(max-width:560px){.cfg{grid-template-columns:1fr}}
 video,canvas{width:100%;border-radius:12px;background:#000}
-.pill{display:inline-block;padding:2px 10px;border-radius:999px;background:#182445;color:#aecdff;font-size:12px;margin-right:6px}
-.hint{color:var(--muted);font-size:13px}
-.bar{height:8px;background:#0d1423;border-radius:20px;overflow:hidden}
-.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6ae,#59f);transition:width .25s}
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#1f1f26;color:#ffd7bd;font-size:12px;margin-right:6px;border:1px solid var(--border)}
+.hint{color:var(--muted);font-size:12px}
+.bar{height:8px;background:#0f0f12;border-radius:20px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--orange),var(--orange-2),var(--orange-3));transition:width .25s}
 .row-inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.tile{background:#0f1728;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.tile img{width:100%;display:block}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.tile{background:#0f0f12;border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative}
+.tile img{width:100%;height:150px;object-fit:cover;display:block}
 .tile .meta{padding:8px 10px;font-size:12px;color:var(--muted)}
+.chk{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);padding:4px;border-radius:8px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin:8px 0}
 small.err{color:var(--bad)}
+hr.sep{border:0;border-top:1px dashed var(--border);margin:8px 0}
+.pager{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:99}
+.modal.open{display:flex}
+.modal img{max-width:96vw;max-height:86vh;border-radius:12px}
+.modal .nav{position:absolute;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;width:96vw}
+.nav button{background:rgba(255,122,26,.85);border:none;color:#111;padding:10px 14px;border-radius:10px}
+.modal .close{position:absolute;top:16px;right:16px;background:#222;border:1px solid #444;color:#fff;border-radius:999px;padding:8px 10px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:560px){.kv{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>Selfie Search</header>
 
 <div class="wrap grid">
-  <!-- Left: capture/upload + config -->
+  <!-- LEFT: capture/upload + config -->
   <section class="card">
     <div class="row">
+      <!-- API is hard-coded in code; just showing read-only box -->
       <div class="cfg">
         <div>
-          <label>API Base</label>
-          <input id="apiBase" placeholder="https://YOUR.execute-api.ap-southeast-1.amazonaws.com"/>
+          <label>API Base (fixed)</label>
+          <input id="apiBase" value="" readonly/>
         </div>
         <div>
-          <label>API Key (optional)</label>
-          <input id="apiKey" placeholder="x-api-key (अगर enabled हो)"/>
+          <label>Public Image Base (GET)</label>
+          <input id="publicBase" placeholder="https://selfiesearch-v2-uploads.s3.amazonaws.com/" />
         </div>
       </div>
 
-      <div class="cfg">
+      <div class="kv">
         <div>
           <label>Threshold</label>
-          <input id="threshold" type="number" min="0" max="100" value="85"/>
+          <input id="threshold" type="number" min="50" max="99" value="85"/>
         </div>
         <div>
-          <label>Max Faces</label>
-          <input id="maxFaces" type="number" min="1" max="50" value="5"/>
+          <label>Max results (limit)</label>
+          <input id="maxResults" type="number" min="5" max="200" value="50"/>
+        </div>
+        <div>
+          <label>Results per page</label>
+          <input id="pageSize" type="number" min="6" max="60" value="12"/>
+        </div>
+        <div>
+          <label>Limit to folder (optional prefix)</label>
+          <input id="prefix" placeholder="e.g. common2/"/>
         </div>
       </div>
 
-      <div>
-        <div class="row-inline">
-          <button id="saveCfg">Save</button>
-          <button class="ghost" id="testCfg">Test Config</button>
-          <span class="pill" id="stat">Idle</span>
-          <span class="pill" id="took"></span>
-        </div>
+      <div class="row-inline">
+        <button id="openCam">Open Camera</button>
+        <button id="btnCapture" disabled>Capture</button>
+        <input id="filePick" type="file" accept="image/*" hidden />
+        <button class="ghost" id="btnPick">Choose File</button>
+        <button id="btnSearch" disabled>Search</button>
+        <span class="pill" id="stat">Idle</span>
+        <span class="pill" id="took"></span>
       </div>
 
       <div>
         <label>Camera</label>
         <video id="video" autoplay playsinline muted></video>
-        <div class="row-inline" style="margin-top:8px">
-          <button id="openCam">Open Camera</button>
-          <button id="btnCapture" disabled>Capture</button>
-          <input id="filePick" type="file" accept="image/*" hidden />
-          <button id="btnPick">Choose File</button>
-        </div>
-        <div class="hint">कैमरा से कैप्चर करें या फ़ोन/लैपटॉप से कोई फोटो चुनें।</div>
-      </div>
-
-      <div>
-        <label>Search</label>
-        <div class="row-inline">
-          <input id="prefix" placeholder="Limit to folder (optional, e.g. common2/)"/>
-          <button id="btnSearch" disabled>Search</button>
-        </div>
-        <div class="hint">यह बटन **आख़िरी कैप्चर/अपलोड** की गयी सेल्फ़ी पर search चलाएगा।</div>
+        <div class="hint">कैमरा/फाइल से सेल्फ़ी लें → हम अपलोड करेंगे → Search बटन या auto-search से मैच मिलेंगे।</div>
       </div>
 
       <div>
@@ -103,93 +113,94 @@ small.err{color:var(--bad)}
     </div>
   </section>
 
-  <!-- Right: results -->
+  <!-- RIGHT: results + actions -->
   <section class="card">
-    <div class="row">
-      <div id="grid" class="results"></div>
-      <pre id="raw" class="hint" style="white-space:pre-wrap"></pre>
+    <div class="toolbar">
+      <div class="row-inline">
+        <button class="ghost" id="selectAll">Select All</button>
+        <button class="ghost" id="clearSel">Clear</button>
+        <button id="dlSel">Download Selected</button>
+      </div>
+      <div class="row-inline">
+        <span id="countSel" class="pill">0 selected</span>
+      </div>
     </div>
+    <div id="grid" class="results"></div>
+    <div class="pager">
+      <button class="ghost" id="prevPg">← Prev</button>
+      <span class="pill" id="pgInfo">Page 1/1</span>
+      <button class="ghost" id="nextPg">Next →</button>
+    </div>
+    <hr class="sep"/>
+    <pre id="raw" class="hint" style="white-space:pre-wrap"></pre>
   </section>
 </div>
 
+<!-- Zoom/Slideshow modal -->
+<div id="modal" class="modal" tabindex="-1">
+  <button class="close" id="mClose">✕</button>
+  <div class="nav">
+    <button id="mPrev">⟵ Prev</button>
+    <button id="mNext">Next ⟶</button>
+  </div>
+  <img id="mImg" alt="preview"/>
+</div>
+
 <script>
-const $ = id=>document.getElementById(id);
-const cfg = {
-  apiBase: localStorage.getItem('apiBase') || '',
-  apiKey:  localStorage.getItem('apiKey')  || '',
-  threshold: +(localStorage.getItem('threshold') || 85),
-  maxFaces: +(localStorage.getItem('maxFaces') || 5),
-  prefix: localStorage.getItem('prefix') || ''
-};
-$('apiBase').value=cfg.apiBase; $('apiKey').value=cfg.apiKey;
-$('threshold').value=cfg.threshold; $('maxFaces').value=cfg.maxFaces; $('prefix').value=cfg.prefix;
+/*** CONFIG — CHANGE THESE TWO LINES ***/
+const API_BASE   = "https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com"; // <- आपका API Gateway base
+let   PUBLIC_BASE = ""; // e.g. "https://selfiesearch-v2-uploads.s3.amazonaws.com/" (for previews & downloads)
+/*** END CONFIG ***/
 
-let stream, lastSelfieKey=null, lastBlob=null;
+const $=id=>document.getElementById(id);
+$('apiBase').value = API_BASE;
 
-$('saveCfg').onclick=()=>{
-  cfg.apiBase=$('apiBase').value.trim().replace(/\/$/,'');
-  cfg.apiKey=$('apiKey').value.trim();
-  cfg.threshold=+$('threshold').value; cfg.maxFaces=+$('maxFaces').value; cfg.prefix=$('prefix').value.trim();
-  for(const k in cfg) localStorage.setItem(k,cfg[k]);
-  msg('Saved'); 
-};
-$('testCfg').onclick=async()=>{
-  try{ await apiPOST('/upload-url',{key:`test/${Date.now()}.jpg`,contentType:'image/jpeg',event:'test'}); msg('Config OK'); }
-  catch(e){ msg('Config error: '+e.message,true); }
-};
+let stream, lastSelfieKey=null, lastBlob=null, results=[], sel=new Set();
+let curPage=1;
+
+$('publicBase').value = localStorage.getItem('publicBase') || "";
+$('publicBase').onchange = ()=>{ PUBLIC_BASE = $('publicBase').value.trim(); localStorage.setItem('publicBase', PUBLIC_BASE); };
+
+function msg(t,err=false){ $('stat').textContent=t; $('stat').style.background=err?'#2b1110':'#1d150c'; $('stat').style.color=err?'#ffc9c4':'#ffd9bd'; }
+function progress(p){ $('pbar').style.width=p+'%'; }
 
 $('openCam').onclick=async ()=>{
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
-    $('video').srcObject = stream;
-    $('btnCapture').disabled=false;
-    msg('Camera ready');
+    $('video').srcObject=stream; $('btnCapture').disabled=false; msg('Camera ready');
   }catch(e){ msg('Camera error: '+e.message,true); }
 };
-
 $('btnPick').onclick=()=>$('filePick').click();
 $('filePick').onchange=async e=>{
   const f=e.target.files[0]; if(!f) return;
-  lastBlob=f; await uploadThenEnableSearch(f);
+  lastBlob=f; await uploadAndMaybeSearch(f,true); // auto-search after upload
 };
-
 $('btnCapture').onclick=async ()=>{
-  try{
-    const blob = await takeSnapshot($('video'));
-    lastBlob = blob;
-    await uploadThenEnableSearch(blob);
-  }catch(e){ msg('Capture error: '+e.message,true); }
+  const blob = await takeSnapshot($('video'));
+  lastBlob = blob; await uploadAndMaybeSearch(blob,true);
 };
-
-$('btnSearch').onclick=async ()=>{
-  if(!lastSelfieKey){ msg('No selfie captured/uploaded',true); return; }
-  await runSearch(lastSelfieKey);
-};
-
-function msg(t,err=false){ $('stat').textContent=t; $('stat').style.background=err?'#3a1a23':'#182445'; $('stat').style.color=err?'#ffd0d0':'#aecdff'; }
-function progress(p){ $('pbar').style.width=p+'%'; }
+$('btnSearch').onclick=async ()=>{ if(!lastSelfieKey) return msg('No selfie yet',true); await runSearch(lastSelfieKey); };
 
 function takeSnapshot(video){
-  const c=document.createElement('canvas');
-  const w=video.videoWidth||960,h=video.videoHeight||720;
+  const c=document.createElement('canvas'); const w=video.videoWidth||960,h=video.videoHeight||720;
   c.width=w;c.height=h; c.getContext('2d').drawImage(video,0,0,w,h);
   return new Promise(r=>c.toBlob(r,'image/jpeg',0.92));
 }
 
-async function uploadThenEnableSearch(blob){
+async function uploadAndMaybeSearch(blob, auto=true){
   guard(true);
   try{
-    progress(15); msg('Requesting upload URL…');
+    progress(20); msg('Requesting upload URL…');
     const key=`temp/selfie-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const j = await apiPOST('/upload-url',{key,contentType:'image/jpeg',event:'selfie'});
-    if(!j.uploadUrl) throw new Error('no uploadUrl');
-    progress(45); msg('Uploading selfie…');
-    await fetch(j.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/jpeg'},body:blob});
-    progress(70); msg('Ready to search');
-    lastSelfieKey=key;
-    $('lastKey').textContent=key; $('lastKeyWrap').style.display='';
+    const up = await apiPOST('/upload-url', {key, contentType:'image/jpeg', event:'selfie'});
+    if(!up.uploadUrl) throw new Error('no uploadUrl');
+    progress(50); msg('Uploading selfie…');
+    const r = await fetch(up.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/jpeg'},body:blob});
+    if(!r.ok) throw new Error('PUT '+r.status);
+    lastSelfieKey=key; $('lastKey').textContent=key; $('lastKeyWrap').style.display='';
     $('btnSearch').disabled=false;
-    progress(80);
+    progress(70); msg('Uploaded');
+    if(auto) await runSearch(key);
   }catch(e){ msg('Upload failed: '+e.message,true); }
   finally{ guard(false); setTimeout(()=>progress(0),700); }
 }
@@ -198,51 +209,97 @@ async function runSearch(key){
   guard(true);
   try{
     progress(85); msg('Searching…');
+    const threshold = +$('threshold').value || 85;
+    const maxFaces  = +$('maxResults').value || 50; // backend limit
     let path='/search';
-    if(cfg.prefix){ const q=new URLSearchParams({prefix:cfg.prefix}); path += `?${q.toString()}`; }
-    const out = await apiPOST(path,{key,threshold:cfg.threshold,maxFaces:cfg.maxFaces});
-    renderResults(out);
+    const prefix = $('prefix').value.trim();
+    if(prefix){ const q=new URLSearchParams({prefix}); path += `?${q.toString()}`; }
+    const out = await apiPOST(path,{key,threshold,maxFaces});
+    // normalize
+    let rows=[];
+    if(Array.isArray(out)) rows=out;
+    else if(out && typeof out.body==='string'){ try{ rows=JSON.parse(out.body);}catch{} }
+    else if(out && Array.isArray(out.results)) rows=out.results;
+    // cap max client-side too
+    const MAX = +$('maxResults').value || 50;
+    results = (rows||[]).slice(0,MAX);
+    curPage=1; sel.clear();
+    render();
+    $('took').textContent = `found ${results.length}`;
     msg('Done');
-    progress(100);
   }catch(e){ msg('Search error: '+e.message,true); }
   finally{ guard(false); setTimeout(()=>progress(0),700); }
 }
 
-async function apiPOST(path, data){
-  if(!cfg.apiBase) throw new Error('Set API Base');
-  const url = cfg.apiBase + path;
-  const headers={'Content-Type':'application/json'};
-  if(cfg.apiKey) headers['x-api-key']=cfg.apiKey;
-  const res = await fetch(url,{method:'POST',headers,body:JSON.stringify(data)});
-  const text = await res.text();
-  if(!res.ok) throw new Error(`HTTP ${res.status} ${text}`);
-  try{ return JSON.parse(text); }catch{ return text; }
+async function apiPOST(path, body){
+  const url = API_BASE.replace(/\/$/,'') + path;
+  const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const txt = await res.text();
+  if(!res.ok) throw new Error(`HTTP ${res.status} ${txt}`);
+  try{return JSON.parse(txt)}catch{return txt}
 }
 
-function renderResults(json){
-  const grid=$('grid'); grid.innerHTML='';
-  const raw=$('raw');
-  raw.textContent = typeof json==='string' ? json : JSON.stringify(json,null,2);
+function imageUrl(item){
+  if(!PUBLIC_BASE) return ''; // user must set public base for previews
+  const base = PUBLIC_BASE.endsWith('/') ? PUBLIC_BASE : PUBLIC_BASE+'/';
+  const key  = item.Photo || item.key || '';
+  return base + key;
+}
 
-  let rows=[];
-  if(Array.isArray(json)) rows=json;
-  else if(json && typeof json.body==='string'){ try{ rows=JSON.parse(json.body);}catch{} }
-  else if(json && Array.isArray(json.results)) rows=json.results;
+function render(){
+  // pagination
+  const pageSize = +$('pageSize').value || 12;
+  const total = results.length;
+  const pages = Math.max(1, Math.ceil(total/pageSize));
+  if(curPage>pages) curPage=pages;
+  const start=(curPage-1)*pageSize, end=Math.min(total, start+pageSize);
+  const pageItems = results.slice(start,end);
 
-  if(!rows || !rows.length){ grid.innerHTML='<small class="hint">No matches</small>'; return; }
-
-  for(const r of rows){
-    const li=document.createElement('div'); li.className='tile';
-    li.innerHTML=`
-      <img alt="" loading="lazy" src="" />
-      <div class="meta">
-        <div><b>${((r.score||r.Similarity)||0).toFixed(2)}%</b> • ${r.Photo||r.key||''}</div>
-        <div class="hint">${r.Bucket||''}</div>
-      </div>
+  const grid = $('grid'); grid.innerHTML='';
+  pageItems.forEach((r,idx)=>{
+    const url = imageUrl(r);
+    const score = (r.score || r.Similarity || 0).toFixed(2);
+    const key = r.Photo || r.key || '';
+    const id = `it-${start+idx}`;
+    const tile = document.createElement('div'); tile.className='tile';
+    tile.innerHTML = `
+      <div class="chk"><input type="checkbox" id="chk-${id}"/></div>
+      <img ${url?'src="'+url+'"':''} alt="">
+      <div class="meta"><b>${score}%</b><br/><span class="hint">${key}</span></div>
     `;
-    grid.appendChild(li);
-  }
+    // select
+    tile.querySelector('input').checked = sel.has(start+idx);
+    tile.querySelector('input').onchange = e=>{
+      if(e.target.checked) sel.add(start+idx); else sel.delete(start+idx);
+      updateSelCount();
+    };
+    // zoom
+    tile.querySelector('img').onclick = ()=>openModal(start+idx);
+    grid.appendChild(tile);
+  });
+
+  $('pgInfo').textContent = `Page ${curPage}/${Math.max(1, Math.ceil(total/pageSize))}`;
+  updateSelCount();
 }
+
+$('prevPg').onclick=()=>{ curPage=Math.max(1,curPage-1); render(); };
+$('nextPg').onclick=()=>{ const pages=Math.max(1,Math.ceil(results.length/(+$('pageSize').value||12))); curPage=Math.min(pages,curPage+1); render(); };
+$('selectAll').onclick=()=>{ const pageSize=+$('pageSize').value||12; const start=(curPage-1)*pageSize, end=Math.min(results.length,start+pageSize); for(let i=start;i<end;i++) sel.add(i); render(); };
+$('clearSel').onclick=()=>{ sel.clear(); render(); };
+
+function updateSelCount(){ $('countSel').textContent = `${sel.size} selected`; }
+
+$('dlSel').onclick=()=>{
+  if(!sel.size) return alert('Select at least one photo.');
+  if(!PUBLIC_BASE){ alert('Set "Public Image Base" first (S3/CloudFront GET URL).'); return; }
+  // download individually (no external zip lib)
+  const base = PUBLIC_BASE.endsWith('/') ? PUBLIC_BASE : PUBLIC_BASE+'/';
+  for(const i of sel){
+    const it = results[i]; const key = it.Photo || it.key || '';
+    const a = document.createElement('a'); a.href = base+key; a.download = key.split('/').pop();
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+};
 
 function guard(lock){
   $('btnCapture').disabled=lock;
@@ -250,6 +307,25 @@ function guard(lock){
   $('btnSearch').disabled=lock || !lastSelfieKey;
 }
 
+function openModal(index){
+  const m=$('modal'), img=$('mImg'); m.classList.add('open'); m.dataset.idx=index;
+  const url=imageUrl(results[index]); if(url) img.src=url;
+}
+$('mClose').onclick=()=>$('modal').classList.remove('open');
+$('mPrev').onclick=()=>slide(-1);
+$('mNext').onclick=()=>slide(1);
+document.addEventListener('keydown',e=>{
+  if(!$('modal').classList.contains('open')) return;
+  if(e.key==='Escape') $('modal').classList.remove('open');
+  if(e.key==='ArrowLeft') slide(-1);
+  if(e.key==='ArrowRight') slide(1);
+});
+function slide(d){
+  let i=+$('modal').dataset.idx||0;
+  i=(i+d+results.length)%results.length;
+  $('modal').dataset.idx=i;
+  const url=imageUrl(results[i]); if(url) $('mImg').src=url;
+}
 </script>
 </body>
 </html>
