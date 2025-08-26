@@ -1,35 +1,401 @@
-<input type="file" id="fileInput" />
-<button onclick="uploadFile()">Upload</button>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SelfieSearch – Admin Upload</title>
+<style>
+  :root{
+    --bg:#0b1220;--panel:#111a2b;--muted:#94a3b8;--text:#e5e7eb;
+    --brand:#5b8ef1;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--border:#1f2a44;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  a{color:var(--brand);text-decoration:none}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+  header{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:22px;margin:0}
+  .pill{border:1px solid var(--border);background:var(--panel);color:var(--muted);padding:6px 10px;border-radius:999px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:840px){.row{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+  label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px}
+  input[type=text],input[type=number]{width:100%;padding:12px 12px;border-radius:10px;border:1px solid var(--border);background:#0e1630;color:var(--text)}
+  input::placeholder{color:#6b7280}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn.outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .muted{color:var(--muted)}
+  .drop{
+    border:1px dashed var(--border);border-radius:14px;background:#0d1630;display:flex;align-items:center;justify-content:center;
+    min-height:160px;text-align:center;padding:16px;cursor:pointer
+  }
+  .drop.drag{border-color:var(--brand);background:#0f1a3d}
+  .small{font-size:12px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:840px){.grid{grid-template-columns:1fr}}
+  .item{border:1px solid var(--border);border-radius:12px;padding:12px;background:#0f172a}
+  .flex{display:flex;gap:8px;align-items:center}
+  .thumb{width:44px;height:44px;border-radius:8px;background:#030712;border:1px solid var(--border);object-fit:cover}
+  .grow{flex:1}
+  progress{width:100%;height:8px;border-radius:999px;overflow:hidden;background:#111827}
+  progress::-webkit-progress-bar{background:#0b1220}
+  progress::-webkit-progress-value{background:linear-gradient(90deg,var(--brand),#78a8ff)}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  pre{margin:0;white-space:pre-wrap;word-break:break-word;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+  .badge{padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:#0f172a;color:var(--muted);font-size:12px}
+  .footer{margin-top:14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="wrap">
 
+  <header>
+    <div class="flex" style="gap:10px">
+      <h1>Admin Upload</h1>
+      <span class="pill" id="envBadge">not configured</span>
+    </div>
+    <div class="toolbar">
+      <button class="btn outline" id="btnCfg">⚙️ Settings</button>
+      <button class="btn outline" id="btnClear">🗑️ Clear List</button>
+    </div>
+  </header>
+
+  <div class="row">
+    <div class="card">
+      <label>Folder / Prefix (e.g. <code>events/2025/aug</code>)</label>
+      <input id="folder" type="text" placeholder="optional (no leading slash)" />
+      <div class="small" style="margin-top:6px">यह prefix S3 object key के आगे जुड़ जाएगा। खाली छोड़ सकते हैं।</div>
+      <div style="height:10px"></div>
+      <div class="grid">
+        <div>
+          <label>Max concurrent uploads</label>
+          <input id="concurrency" type="number" min="1" max="10" value="4" />
+        </div>
+        <div>
+          <label>Skip duplicates in batch (by SHA-256)</label>
+          <input id="dedupe" type="text" value="on" readonly class="pill" style="width:auto;padding:6px 12px;background:#0f172a" />
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div id="drop" class="drop">
+        <div>
+          <div style="font-size:16px;margin-bottom:6px">📁 Drag & drop files here</div>
+          <div class="small">or</div>
+          <div style="height:8px"></div>
+          <button class="btn outline" id="pickBtn">Choose files</button>
+          <input id="fileInput" type="file" multiple hidden />
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="badge"><span id="selCount">0</span> selected</div>
+        <div class="flex" style="gap:8px">
+          <button class="btn outline" id="btnHash">🔍 Pre-scan (hash & info)</button>
+          <button class="btn" id="btnUpload">⬆️ Upload</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex" style="justify-content:space-between">
+        <div>
+          <div style="font-weight:600">Queue</div>
+          <div class="small">प्रत्येक फ़ाइल के लिए progress, hash और result</div>
+        </div>
+        <div class="badge"><span id="doneCount">0</span>/<span id="totalCount">0</span> done</div>
+      </div>
+      <div style="height:10px"></div>
+      <div id="list" style="display:grid;gap:10px"></div>
+      <div style="height:12px"></div>
+      <progress id="overall" value="0" max="1"></progress>
+      <div class="small" id="overallTxt" style="margin-top:6px">Waiting…</div>
+    </div>
+  </div>
+
+  <div style="height:14px"></div>
+
+  <div class="card">
+    <div class="flex" style="justify-content:space-between">
+      <div><b>Logs</b></div>
+      <div class="badge" id="summaryBadge">–</div>
+    </div>
+    <div style="height:8px"></div>
+    <pre id="log"></pre>
+  </div>
+
+</div>
+
+<!-- Settings modal (simple prompt approach kept minimal & robust) -->
 <script>
-async function uploadFile() {
-  const file = document.getElementById("fileInput").files[0];
-  if (!file) {
-    alert("Please select a file");
-    return;
+const $ = s=>document.querySelector(s);
+const state = {
+  files: [],
+  items: [],
+  results: [],
+  apiBase: localStorage.getItem('upload_api_base') || '',   // e.g. https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com
+  apiKey:  localStorage.getItem('upload_api_key')  || '',   // optional x-api-key
+  running:false
+};
+
+function setBadge(){
+  $('#envBadge').textContent = state.apiBase ? new URL(state.apiBase).host : 'not configured';
+}
+setBadge();
+
+$('#btnCfg').onclick = async ()=>{
+  const base = prompt('API Base (no trailing slash)\nExample: https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com', state.apiBase || '');
+  if(base===null) return;
+  state.apiBase = base.trim();
+  localStorage.setItem('upload_api_base', state.apiBase);
+
+  const key  = prompt('Optional API Key (x-api-key header). Leave blank if not used.', state.apiKey || '');
+  if(key===null) return;
+  state.apiKey = key.trim();
+  localStorage.setItem('upload_api_key', state.apiKey);
+
+  setBadge();
+  log(`Settings saved. Base=${state.apiBase}, apiKey=${state.apiKey ? '•••' : '(none)'}`);
+};
+
+$('#btnClear').onclick = ()=>{
+  state.files=[]; state.items=[]; state.results=[];
+  $('#list').innerHTML=''; $('#selCount').textContent='0';
+  $('#totalCount').textContent='0'; $('#doneCount').textContent='0';
+  $('#overall').value=0; $('#overallTxt').textContent='Waiting…';
+  $('#summaryBadge').textContent='–';
+  log('Cleared list.');
+};
+
+// UTIL
+const sleep = ms=>new Promise(r=>setTimeout(r,ms));
+const fmtBytes = n=>{
+  const u=['B','KB','MB','GB']; let i=0,v=n;
+  while(v>=1024 && i<u.length-1){v/=1024;i++}
+  return `${v.toFixed(v<10&&i?2:0)} ${u[i]}`;
+};
+const slug = s => s.normalize('NFKD').replace(/[^\w.\-]+/g,'-').replace(/\-+/g,'-').replace(/^\-|\-$/g,'');
+const sha256 = async (file)=>{
+  const buf = await file.arrayBuffer();
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  const arr  = Array.from(new Uint8Array(hash));
+  return arr.map(b=>b.toString(16).padStart(2,'0')).join('');
+};
+const imageDims = file => new Promise(res=>{
+  try{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{ res({w:img.naturalWidth||img.width||0,h:img.naturalHeight||img.height||0}); URL.revokeObjectURL(url); };
+    img.onerror= ()=>{ res({w:0,h:0}); URL.revokeObjectURL(url); };
+    img.src = url;
+  }catch{ res({w:0,h:0})}
+});
+
+function log(...a){
+  const line = a.join(' ');
+  $('#log').textContent += line+'\n';
+  // auto-scroll
+  const pre = $('#log'); pre.parentElement.scrollTop = pre.parentElement.scrollHeight;
+}
+
+// UI handling
+const drop = $('#drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{
+  e.preventDefault(); drop.classList.remove('drag');
+  addFiles([...e.dataTransfer.files]);
+});
+$('#pickBtn').onclick = ()=>$('#fileInput').click();
+$('#fileInput').onchange = e => addFiles([...e.target.files]);
+
+function addFiles(files){
+  if(!files?.length) return;
+  let added=0;
+  for(const f of files){
+    if(!state.files.find(x=>x.name===f.name && x.size===f.size && x.lastModified===f.lastModified)){
+      state.files.push(f); added++;
+      renderItem(f);
+    }
+  }
+  $('#selCount').textContent = state.files.length;
+  $('#totalCount').textContent = state.files.length;
+  log(`Added ${added} file(s). Total=${state.files.length}`);
+}
+
+function renderItem(file){
+  const id = crypto.randomUUID();
+  const div = document.createElement('div');
+  div.className='item';
+  div.id = id;
+  div.innerHTML = `
+    <div class="flex">
+      <img class="thumb" />
+      <div class="grow">
+        <div style="display:flex;justify-content:space-between;gap:8px">
+          <div style="font-weight:600">${file.name}</div>
+          <div class="small">${fmtBytes(file.size)}</div>
+        </div>
+        <div class="small muted">${file.type||'application/octet-stream'}</div>
+      </div>
+    </div>
+    <div style="height:8px"></div>
+    <progress value="0" max="1"></progress>
+    <div class="small" style="margin-top:6px">
+      <span class="hash">hash: …</span> ·
+      <span class="dims">W×H: …</span> ·
+      <span class="key small"></span>
+    </div>
+    <div class="small status muted" style="margin-top:6px">Queued</div>
+  `;
+  $('#list').appendChild(div);
+  state.items.push({id,file,hash:null,key:null,ok:false});
+  // preview
+  const imgEl = div.querySelector('.thumb');
+  try{ imgEl.src = URL.createObjectURL(file); }catch{}
+}
+
+$('#btnHash').onclick = async ()=>{
+  if(!state.files.length) return alert('No files selected.');
+  await preScan();
+};
+
+async function preScan(){
+  log('Pre-scan starting…');
+  const folder = ($('#folder').value||'').replace(/^\/+/,'').replace(/\/+$/,'');
+  let dup=0, i=0;
+
+  for(const it of state.items){
+    const node = document.getElementById(it.id);
+    const p = node.querySelector('progress');
+    const s = node.querySelector('.status');
+    p.value=0.05; s.textContent='Hashing…';
+
+    const [h,dim] = await Promise.all([sha256(it.file), imageDims(it.file)]);
+    it.hash = h; it.dims = dim;
+    node.querySelector('.hash').textContent = 'hash: ' + h.slice(0,12) + '…';
+    node.querySelector('.dims').textContent = `W×H: ${dim.w}×${dim.h}`;
+
+    // de-dup within batch
+    if(state.items.find(x=>x!==it && x.hash===h)){
+      s.innerHTML = '<span class="warn">Duplicate in batch – skipped</span>';
+      it.skip=true; dup++; continue;
+    }
+
+    // generate key
+    const safe = slug(it.file.name);
+    it.key = (folder?folder+'/':'') + `${h.slice(0,12)}-${safe}`;
+    node.querySelector('.key').textContent = it.key;
+    p.value=0.1; s.textContent='Ready';
+    i++;
+    await sleep(5);
+  }
+  $('#summaryBadge').textContent = `pre-scan: ${i} ready, ${dup} duplicate skipped`;
+  log(`Pre-scan done. Ready=${i}, Duplicates skipped=${dup}`);
+}
+
+// Upload pipeline
+$('#btnUpload').onclick = async ()=>{
+  if(state.running) return;
+  if(!state.apiBase) return alert('Please set API Base in Settings.');
+  if(!state.files.length) return alert('No files.');
+
+  state.running=true;
+  $('#btnUpload').disabled=true; $('#btnHash').disabled=true; $('#btnCfg').disabled=true;
+  $('#overallTxt').textContent='Uploading…';
+
+  if(!state.items.some(x=>x.hash)) await preScan();
+
+  const conc = Math.max(1, Math.min(10, +$('#concurrency').value||4));
+  const q = state.items.filter(x=>!x.skip);
+  let done=0;
+
+  const tick = ()=>{
+    done++;
+    $('#doneCount').textContent = done;
+    $('#overall').value = done / q.length;
+  };
+
+  // worker pool
+  const pool = Array(Math.min(conc,q.length)).fill(0).map(()=>worker());
+  await Promise.all(pool);
+
+  async function worker(){
+    while(true){
+      const it = q.find(x=>!x._busy && !x.ok && !x.err);
+      if(!it) break;
+      it._busy=true;
+      try{ await uploadOne(it); it.ok=true; tick(); }
+      catch(err){ it.err = (err && err.message) || String(err); tick(); }
+      it._busy=false;
+    }
   }
 
-  // Step 1: call backend to get presigned URL
-  const res = await fetch("https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com/upload-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: file.name, contentType: file.type, event: "manual" })
-  });
-
-  const data = await res.json();
-  console.log("Presigned URL:", data.uploadUrl);
-
-  // Step 2: upload file to S3
-  const uploadRes = await fetch(data.uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type },
-    body: file
-  });
-
-  if (uploadRes.ok) {
-    alert("Upload success ✅");
-  } else {
-    alert("Upload failed ❌");
+  // After all uploads, write index.json
+  const uploaded = state.items.filter(x=>x.ok).map(x=>({
+    key:x.key,name:x.file.name,type:x.file.type,size:x.file.size,
+    hash:x.hash,w:x.dims?.w||0,h:x.dims?.h||0,uploadedAt:new Date().toISOString()
+  }));
+  if(uploaded.length){
+    try{
+      const folder = ($('#folder').value||'').replace(/^\/+/,'').replace(/\/+$/,'');
+      const indexKey = (folder?folder+'/':'') + 'index.json';
+      await putJson(indexKey, uploaded);
+      log(`index.json written to ${indexKey}`);
+    }catch(e){
+      log('index.json upload failed:', e);
+    }
   }
+
+  $('#overallTxt').textContent = `Finished. OK=${uploaded.length} / ${q.length}`;
+  $('#summaryBadge').textContent = `done: ${uploaded.length}/${q.length}`;
+  $('#btnUpload').disabled=false; $('#btnHash').disabled=false; $('#btnCfg').disabled=false;
+  state.running=false;
+}
+
+async function uploadOne(it){
+  const node = document.getElementById(it.id);
+  const p = node.querySelector('progress'); const s = node.querySelector('.status');
+  p.value=0.15; s.textContent='Requesting URL…';
+
+  const url = `${state.apiBase.replace(/\/$/,'')}/upload-url`;
+  const body = { key: it.key, contentType: it.file.type || 'application/octet-stream', event:'admin' };
+  const headers = {'Content-Type':'application/json'};
+  if(state.apiKey) headers['x-api-key']=state.apiKey;
+
+  const r = await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
+  if(!r.ok) throw new Error(`upload-url ${r.status}`);
+  const j = await r.json();
+  if(!j.uploadUrl) throw new Error('no uploadUrl');
+
+  await putWithProgress(j.uploadUrl, it.file, (f)=>{ p.value = 0.15 + f*0.8; });
+  p.value=1; s.innerHTML='<span class="ok">Uploaded</span>';
+  log(`OK ${it.key} (${fmtBytes(it.file.size)})`);
+}
+
+function putWithProgress(putUrl, file, onProg){
+  return new Promise((resolve,reject)=>{
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', putUrl, true);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+    xhr.upload.onprogress = e => { if(e.lengthComputable) onProg(e.loaded/e.total); };
+    xhr.onload = ()=> (xhr.status>=200 && xhr.status<300) ? resolve() : reject(new Error(`PUT ${xhr.status}`));
+    xhr.onerror = ()=>reject(new Error('network'));
+    xhr.send(file);
+  });
+}
+
+async function putJson(key, obj){
+  const url = `${state.apiBase.replace(/\/$/,'')}/upload-url`;
+  const headers = {'Content-Type':'application/json'}; if(state.apiKey) headers['x-api-key']=state.apiKey;
+  const r = await fetch(url,{method:'POST',headers,body:JSON.stringify({ key, contentType:'application/json', event:'index' })});
+  if(!r.ok) throw new Error(`upload-url(index) ${r.status}`);
+  const j = await r.json();
+  const data = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+  await putWithProgress(j.uploadUrl, data, ()=>{});
 }
 </script>
+</body>
+</html>
