@@ -1,298 +1,258 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Selfie Search</title>
+  <meta charset="utf-8" />
+  <title>Selfie Search v2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
-      --bg:#0f1115;--panel:#171a21;--muted:#9aa4b2;--text:#e8edf3;--brand:#ff7a59;
-      --ok:#21c995;--warn:#f5a623;--bad:#ff5c5c;--chip:#222734;
-      --border:1px solid #232836;
+      --bg:#0f1115;--panel:#171a21;--muted:#8b92a6;--text:#e7eaf3;--acc:#ff7b57;--ok:#3ecf8e;--warn:#ffcc66;--err:#ff5d5d;--chip:#222738;
     }
-    *{box-sizing:border-box} html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
-    .wrap{max-width:1200px;margin:24px auto;padding:0 16px}
-    .grid{display:grid;grid-template-columns:360px 1fr;gap:20px}
-    .card{background:var(--panel);border-radius:14px;border:var(--border);padding:16px}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .row > *{margin:6px 0}
-    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-    input,select,button{border-radius:10px;border:var(--border);background:#0e1118;color:var(--text);padding:10px 12px;font-size:14px;outline:none}
-    input:disabled{opacity:.6}
-    button{cursor:pointer;background:#141925;border-color:#2a3143}
-    button.primary{background:var(--brand);color:#16181e;border:none}
-    button.ghost{background:#0e1118}
-    button:disabled{opacity:.5;cursor:not-allowed}
-    .kpi{display:flex;gap:12px;align-items:center}
-    .pill{padding:4px 10px;border-radius:999px;background:var(--chip);font-size:12px;color:#c8d0dc;border:var(--border)}
-    .danger{color:var(--bad)} .success{color:var(--ok)} .warn{color:var(--warn)}
-    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
-    .tile{background:#0d1118;border:var(--border);border-radius:12px;overflow:hidden}
-    .tile img{width:100%;height:160px;object-fit:cover;display:block;background:#0b0e13}
-    .meta{padding:8px 10px;font-size:12px;color:#c2c9d6;display:flex;justify-content:space-between;gap:8px}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial}
+    h1{font-size:28px;margin:24px 0 12px}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .grid{display:grid;gap:24px;grid-template-columns:340px 1fr}
+    .card{background:var(--panel);border:1px solid #222532;border-radius:14px;padding:16px}
+    label{display:block;color:var(--muted);font-size:12px;margin:12px 0 6px}
+    input,select,button{font:inherit}
+    .in{width:100%;padding:10px 12px;border-radius:10px;background:#0d0f14;border:1px solid #242835;color:var(--text);outline:none}
+    .row{display:flex;gap:10px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid #2a3040;background:#1c2230;color:#fff;cursor:pointer}
+    .btn:hover{background:#20283a}
+    .btn.acc{background:var(--acc);border-color:#ff693f;color:#190e0b}
+    .btn.ghost{background:transparent;border-color:#2a3040}
+    .pill{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid #2a3040;border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
     .muted{color:var(--muted)}
-    .log{min-height:48px;font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b0e13;border-radius:10px;border:var(--border);padding:10px;white-space:pre-wrap}
-    .split{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
-    .hint{font-size:12px;color:var(--muted)}
+    .log{white-space:pre-wrap;background:#0b0d12;border:1px dashed #2a3040;border-radius:12px;padding:12px;max-height:240px;overflow:auto}
+    .grid2{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+    .tile{background:#0d1017;border:1px solid #222532;border-radius:12px;overflow:hidden}
+    .tile img{display:block;width:100%;height:180px;object-fit:cover;background:#0a0c11}
+    .tile .meta{padding:10px 12px}
+    .ok{color:var(--ok)} .err{color:var(--err)} .warn{color:var(--warn)}
+    .sep{height:1px;background:#222532;margin:12px 0}
+    small.code{font-family:ui-monospace,Menlo,Consolas,monospace;color:#9aa3b2}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1 style="margin:0 0 12px 0;">Selfie Search</h1>
+    <h1>Selfie Search</h1>
+
     <div class="grid">
-      <!-- left -->
-      <section class="card">
-        <div class="row">
-          <div style="flex:1 1 100%;">
-            <label>API Base (fixed)</label>
-            <input id="apiBase" value="https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com" disabled>
-            <div class="hint">POST /upload-url, POST /search</div>
-          </div>
-          <div style="flex:1 1 100%;">
-            <label>Public Image Base (GET)</label>
-            <input id="publicBase" value="https://selfiesearch-v2-uploads.s3.amazonaws.com">
-            <div class="hint">S3 static URL prefix</div>
-          </div>
-        </div>
+      <!-- Left panel -->
+      <div class="card">
+        <div class="pill" id="statusChip">ready</div>
 
-        <hr style="border:none;border-top:var(--border);margin:10px 0 14px">
+        <label>API Base (fixed)</label>
+        <input id="apiBase" class="in" value="https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com" />
+
+        <label>Public Image Base (GET)</label>
+        <input id="publicBase" class="in" value="https://selfiesearch-v2-uploads.s3.amazonaws.com" />
 
         <div class="row">
-          <div style="flex:1 1 110px">
+          <div style="flex:1">
             <label>Threshold</label>
-            <input id="threshold" type="number" value="85" min="0" max="100">
+            <input id="threshold" class="in" type="number" value="85" />
           </div>
-          <div style="flex:1 1 120px">
+          <div style="width:120px">
             <label>Max Faces</label>
-            <input id="maxFaces" type="number" value="5" min="1" max="50">
-          </div>
-          <div style="flex:1 1 100%">
-            <label>Limit to folder (optional prefix)</label>
-            <input id="prefix" placeholder="e.g. common2/">
+            <input id="maxFaces" class="in" type="number" value="5" />
           </div>
         </div>
 
-        <div class="row" style="margin-top:6px;">
-          <div class="split" style="flex:1 1 100%;">
-            <div>
-              <label>Choose file</label>
-              <input id="file" type="file" accept="image/*">
-            </div>
-            <button id="btnUpload" class="primary">Upload & Search</button>
-          </div>
-          <div class="hint" style="margin-top:-4px;">Upload S3 पर होगा, फिर उसी key पर /search चलती है</div>
+        <label>Limit to folder (prefix)</label>
+        <input id="prefix" class="in" placeholder="e.g. common2" value="COMMON2" />
+
+        <label>Choose file</label>
+        <input id="file" class="in" type="file" accept="image/*" />
+
+        <div class="row" style="margin-top:12px">
+          <button id="btnUploadSearch" class="btn acc">Upload & Search</button>
+          <button id="btnClear" class="btn ghost">Clear</button>
         </div>
 
-        <div class="row" style="margin-top:10px;">
-          <div class="split" style="flex:1 1 100%;">
-            <div>
-              <label>Or search an existing key (already in S3)</label>
-              <input id="manualKey" placeholder="e.g. common2/cli-test.jpg">
-            </div>
-            <button id="btnSearch" class="ghost">Search by Key</button>
-          </div>
+        <div class="sep"></div>
+
+        <label>Or search an existing key (already in S3)</label>
+        <input id="existingKey" class="in" placeholder="COMMON2/your-image.jpg" />
+        <div class="row" style="margin-top:10px">
+          <button id="btnSearchByKey" class="btn">Search by Key</button>
         </div>
 
-        <div style="margin-top:14px;">
-          <div class="kpi">
-            <span class="pill" id="kpiStatus">idle</span>
-            <span class="pill" id="kpiCount">0 matches</span>
-          </div>
-          <div id="log" class="log" style="margin-top:8px;"></div>
-        </div>
-      </section>
+        <div class="sep"></div>
 
-      <!-- right -->
-      <section class="card">
-        <div class="row" style="justify-content:space-between;">
-          <div class="row">
-            <button id="btnClear" class="ghost">Clear</button>
-          </div>
-          <div class="pill" id="pageInfo">Page 1/1</div>
-        </div>
+        <label>Logs</label>
+        <div id="log" class="log">ready</div>
+      </div>
 
-        <div id="results" class="thumbs" style="margin-top:12px;"></div>
-      </section>
+      <!-- Results -->
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div class="pill"><span>Results</span> <span id="resultCount">0</span></div>
+          <button id="btnDownloadSel" class="btn ghost">Download Selected</button>
+        </div>
+        <div class="sep"></div>
+        <div id="results" class="grid2"></div>
+      </div>
     </div>
   </div>
 
 <script>
-(async function () {
-  const $ = s => document.querySelector(s);
-  const apiBase    = $('#apiBase');
-  const publicBase = $('#publicBase');
-  const threshold  = $('#threshold');
-  const maxFaces   = $('#maxFaces');
-  const prefix     = $('#prefix');
-  const fileInput  = $('#file');
-  const btnUpload  = $('#btnUpload');
-  const btnSearch  = $('#btnSearch');
-  const manualKey  = $('#manualKey');
-  const results    = $('#results');
-  const kpiStatus  = $('#kpiStatus');
-  const kpiCount   = $('#kpiCount');
-  const logEl      = $('#log');
-  const pageInfo   = $('#pageInfo');
-  const btnClear   = $('#btnClear');
+/** ====== CONFIG (edit these 3 if needed) ====== **/
+const API_BASE_DEFAULT     = "https://87pwi4umfk.execute-api.ap-southeast-1.amazonaws.com";
+const PUBLIC_IMG_BASE_DEF  = "https://selfiesearch-v2-uploads.s3.amazonaws.com";
+const ALLOWED_ORIGIN       = "https://selfiesearch2.netlify.app";
+/** ============================================ **/
 
-  let matches = [];
-  let page = 1, perPage = 12;
+const el = id => document.getElementById(id);
+const log = (...a)=>{ const s=a.map(x=>typeof x==='string'?x:JSON.stringify(x,null,2)).join(' '); const box=el('log'); box.textContent = (box.textContent? box.textContent+"\n":"")+s; box.scrollTop=box.scrollHeight; };
 
-  btnClear.addEventListener('click', () => {
-    matches = []; render();
-    kpiCount.textContent = `0 matches`;
-    log(`cleared`);
+function setChip(text, cls='') {
+  const chip = el('statusChip');
+  chip.textContent = text;
+  chip.className = 'pill '+cls;
+}
+
+function buildKey(prefix, fileName){
+  const ts = new Date().toISOString().replace(/[^\dTZ]/g,'').replace('Z','');
+  const clean = fileName.replace(/\s+/g,'_');
+  let p = (prefix||'').replace(/^\/+|\/+$/g,'');
+  return (p? p+'/':'') + ts + '_' + clean;
+}
+
+async function postJSON(url, body){
+  const r = await fetch(url,{
+    method:'POST',
+    mode:'cors',
+    cache:'no-store',
+    credentials:'omit',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(body)
   });
+  const text = await r.text();
+  let data = null;
+  try{ data = text ? JSON.parse(text) : {}; }catch(e){ data = {raw:text}; }
+  if(!r.ok){ const err = new Error('HTTP '+r.status); err.response=data; throw err; }
+  return data;
+}
 
-  function log(msg, type='') {
-    const ts = new Date().toLocaleTimeString();
-    logEl.textContent = `[${ts}] ${msg}`;
-    kpiStatus.textContent = type || 'ready';
-  }
-
-  function setBusy(b) {
-    btnUpload.disabled = btnSearch.disabled = b;
-    kpiStatus.textContent = b ? 'working...' : 'ready';
-  }
-
-  function buildImageURL(key){
-    const base = publicBase.value.replace(/\/+$/,'');
-    const k = String(key||'').replace(/^\/+/,'');
-    return `${base}/${k}`;
-  }
-
-  function render(){
-    // pagination
-    const total = matches.length;
-    const pages = Math.max(1, Math.ceil(total / perPage));
-    page = Math.min(Math.max(1, page), pages);
-    pageInfo.textContent = `Page ${page}/${pages}`;
-
-    const start = (page-1)*perPage, end = start+perPage;
-    const items = matches.slice(start, end);
-
-    results.innerHTML = items.map(m => {
-      const face  = m.Face || {};
-      const sim   = (m.Similarity ?? m.similarity ?? 0).toFixed(1);
-      const key   = face.ExternalImageId || face.ExternalImageID || m.externalImageId || '';
-      const url   = key ? buildImageURL(key) : '';
-      const conf  = (face.Confidence ?? m.confidence ?? 0).toFixed(1);
-      return `
-        <div class="tile">
-          <img src="${url}" alt="">
-          <div class="meta">
-            <span class="muted">sim: <b>${sim}%</b></span>
-            <span class="muted">conf: <b>${conf}%</b></span>
-          </div>
-          <div class="meta" title="${key}">
-            <span class="muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${key || '-'}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  async function getUploadUrl(key){
-    // POST /upload-url  -> {uploadUrl,key,bucket}
-    const body = { key, contentType: 'image/jpeg', event: 'manual' };
-    const r = await fetch(`${apiBase.value}/upload-url`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    if(!r.ok) throw new Error(`upload-url ${r.status}`);
-    return r.json();
-  }
-
-  async function putToS3(uploadUrl, file){
-    // S3 presigned URL: send RAW bytes with ONLY Content-Type
-    const r = await fetch(uploadUrl, {
-      method:'PUT',
-      headers:{ 'Content-Type':'image/jpeg' },
-      body: file
-    });
-    if(!r.ok) throw new Error(`S3 PUT ${r.status}`);
-  }
-
-  async function callSearch(key){
-    const body = {
-      key,
-      threshold: Number(threshold.value || 80),
-      maxFaces: Number(maxFaces.value || 5),
-    };
-    const pfx = prefix.value.trim();
-    if (pfx) body.prefix = pfx;
-
-    const r = await fetch(`${apiBase.value}/search`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    if(!r.ok) throw new Error(`search ${r.status}`);
-    const js = await r.json();
-    // normalize FaceMatches array
-    const list = js.matches || js.FaceMatches || [];
-    // unify field casing
-    matches = list.map(x => {
-      if (x.Face && !x.Face.ExternalImageId && x.Face.ExternalImageID)
-        x.Face.ExternalImageId = x.Face.ExternalImageID;
-      return x;
-    });
-    kpiCount.textContent = `${matches.length} matches`;
-    render();
-    return js;
-  }
-
-  btnUpload.addEventListener('click', async () => {
-    const f = fileInput.files?.[0];
-    if(!f){ log('Please choose a file', 'warn'); return; }
-    try{
-      setBusy(true);
-      // destination key: optional prefix + ISO timestamp
-      const pfx = prefix.value.trim();
-      const stamp = new Date().toISOString().replace(/[:.]/g,'');
-      const key = `${pfx ? pfx.replace(/\/?$/,'/') : ''}ui-${stamp}.jpg`;
-
-      log(`Requesting presigned URL for ${key} ...`);
-      const {uploadUrl} = await getUploadUrl(key);
-
-      log('Uploading to S3 ...');
-      await putToS3(uploadUrl, f);
-
-      log('Uploaded. Running search ...');
-      await callSearch(key);
-
-      manualKey.value = key;
-      log('Done', 'success');
-    }catch(e){
-      console.error(e);
-      log(`Error: ${e.message}`, 'danger');
-      alert(e.message);
-    }finally{
-      setBusy(false);
-    }
+async function putBinary(url, file, contentType){
+  // IMPORTANT: only send Content-Type that was used during presign
+  return fetch(url, {
+    method:'PUT',
+    mode:'cors',
+    cache:'no-store',
+    headers: contentType ? {'Content-Type': contentType} : undefined,
+    body:file
+  }).then(r=>{
+    if(!r.ok) throw new Error('S3 PUT failed '+r.status);
+    return true;
   });
+}
 
-  btnSearch.addEventListener('click', async () => {
-    const key = manualKey.value.trim();
-    if(!key){ log('Enter a key to search', 'warn'); return; }
-    try{
-      setBusy(true);
-      log(`Searching ${key} ...`);
-      await callSearch(key);
-      log('Done', 'success');
-    }catch(e){
-      console.error(e);
-      log(`Error: ${e.message}`, 'danger');
-      alert(e.message);
-    }finally{
-      setBusy(false);
-    }
-  });
+function renderResults(matches, publicBase){
+  const box = el('results');
+  box.innerHTML = '';
+  el('resultCount').textContent = matches.length;
+  if(!matches.length){ return; }
+  for(const m of matches){
+    const f = m.Face || {};
+    const imgKey = f.ExternalImageId || f.externalImageId || f.ImageId || '';
+    const url = imgKey ? `${publicBase.replace(/\/+$/,'')}/${imgKey.replace(/^\/+/,'')}` : '';
+    const div = document.createElement('div');
+    div.className = 'tile';
+    div.innerHTML = `
+      <img src="${url || ''}" onerror="this.style.display='none'" alt="">
+      <div class="meta">
+        <div><b>Similarity:</b> ${(m.Similarity ?? m.similarity ?? 0).toFixed(2)}%</div>
+        <div class="muted"><small>Confidence:</small> ${(f.Confidence ?? 0).toFixed(2)}%</div>
+        <div class="muted"><small>ImageId:</small> <small class="code">${f.ImageId||'-'}</small></div>
+        <div class="muted"><small>ExternalImageId:</small> <small class="code">${imgKey||'-'}</small></div>
+      </div>`;
+    box.appendChild(div);
+  }
+}
 
-  // init
-  log('ready');
-})();
+async function doSearchByKey(key){
+  const apiBase   = (el('apiBase').value||API_BASE_DEFAULT).replace(/\/+$/,'');
+  const threshold = parseFloat(el('threshold').value||'85');
+  const maxFaces  = parseInt(el('maxFaces').value||'5',10);
+  const publicBase= el('publicBase').value || PUBLIC_IMG_BASE_DEF;
+
+  setChip('searching...');
+  log('POST', apiBase+'/search', {key, threshold, maxFaces});
+  const res = await postJSON(apiBase+'/search', { key, threshold, maxFaces });
+  log('search response:', res);
+  try{
+    const body = typeof res.body==='string' ? JSON.parse(res.body) : (res.body||res);
+    const matches = body.matches || body.FaceMatches || [];
+    renderResults(matches, publicBase);
+    setChip('done', 'ok');
+  }catch(e){
+    setChip('parse error','warn');
+    log('parse error', e.message);
+  }
+}
+
+async function handleUploadAndSearch(){
+  try{
+    const file = el('file').files[0];
+    if(!file){ alert('Choose a file first'); return; }
+
+    const apiBase   = (el('apiBase').value||API_BASE_DEFAULT).replace(/\/+$/,'');
+    const publicBase= el('publicBase').value || PUBLIC_IMG_BASE_DEF;
+    const threshold = parseFloat(el('threshold').value||'85');
+    const maxFaces  = parseInt(el('maxFaces').value||'5',10);
+    const prefix    = el('prefix').value||'';
+    const key       = buildKey(prefix, file.name);
+    const contentType = file.type || 'image/jpeg';
+
+    setChip('requesting presign...');
+    const req = { key, contentType, event:'manual' };
+    log('POST', apiBase+'/upload-url', req);
+    const presign = await postJSON(apiBase+'/upload-url', req);
+    log('presign response:', presign);
+
+    // Handle possible {body: "..."} shape
+    const p = typeof presign.body==='string' ? JSON.parse(presign.body) : (presign.body||presign);
+    const uploadUrl = p.uploadUrl || p.url || p.presignedUrl;
+    if(!uploadUrl) throw new Error('uploadUrl missing');
+
+    setChip('uploading to S3...');
+    await putBinary(uploadUrl, file, contentType);
+    setChip('uploaded', 'ok');
+    log('PUT', uploadUrl, '[OK]');
+
+    setChip('searching...');
+    const searchPayload = { key, threshold, maxFaces };
+    log('POST', apiBase+'/search', searchPayload);
+    const res = await postJSON(apiBase+'/search', searchPayload);
+    log('search response:', res);
+
+    const body = typeof res.body==='string' ? JSON.parse(res.body) : (res.body||res);
+    const matches = body.matches || body.FaceMatches || [];
+    renderResults(matches, publicBase);
+    setChip('done', 'ok');
+  }catch(e){
+    setChip('error','err');
+    log('ERROR:', e.message, e.response||'');
+    alert('Error: '+e.message);
+  }
+}
+
+el('btnUploadSearch').onclick = handleUploadAndSearch;
+el('btnClear').onclick = () => {
+  el('file').value = '';
+  el('existingKey').value = '';
+  el('results').innerHTML = '';
+  el('resultCount').textContent = '0';
+  el('log').textContent = 'ready';
+  setChip('ready');
+};
+el('btnSearchByKey').onclick = () => {
+  const k = el('existingKey').value.trim();
+  if(!k){ alert('Enter S3 key'); return; }
+  doSearchByKey(k);
+};
 </script>
 </body>
 </html>
